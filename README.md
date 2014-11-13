@@ -6,13 +6,7 @@
 - CRUD operations can be done with both PHP and AngularJS (with a single line on code)
 
 ##Project status##
-It's highly experimental code! Just want to share the concept and code to see **if anyone interested in collaborating!
-
-
-----------
-
-
-**
+It's highly experimental code! Just want to share the concept and code to see **if anyone interested in collaborating!**
 
 ###Facebook like newsfeed demo (in two minutes)###
 
@@ -36,7 +30,7 @@ The first three arguments are pretty standard:
      1. Backend/Newsfeed@index *[This will invoke the index function in Backend/Newsfeed class]*
 
 3. *$acl:* can be "true" for logged in otherwise false. Also supports strings like 'admin','power','business','trial' as defined in config file.
-4. **$model objects: This is the most unique part. **
+4. **$model objects: This is the most unique part.**
   1. What are model objects?
      1. Models are basically PHP objects that support CRUD operations (in both PHP and AngularJS). Something similar to an ORM but not that (as explained later).
      2. The model classes are automatically generated using a script. So for our sample database MinutePHP has generated 5 PHP Model classes called *Users, Posts, Comments, PostsLikes and CommentsLikes*
@@ -56,17 +50,17 @@ $r->get('/newsfeed/:user_id', 'Backend/Newsfeed@index', true, 'posts[user_id][]'
 Explanation of the *last two parameters*:
    
 1. ***posts[user_id][]*** - this will load all posts with user_id matching *:user_id* in URL (our placeholder)
-   1.  It will then create `$posts` object (instance of Posts model) which is an array of `post` items.
+   1.  It will then create `$posts` object (instance of Posts model) which is an array of matching rows from our `posts` table.
    2.  It will pass the `$posts` object to the controller (see below). 
    3. Example: /newsfeed/1 will fill `$posts` with post items where `user_id=1`.
    4. The **[ ]** at end is to specify we want an array or *all* matching results.
-2.  ***users[posts.user_id] as poster*** - this will query the Users model using `user_id` from $posts. As a result it will:
-   1. Create a $poster object (instance of User model) and pass it to the controller (see below). 
-   2. In addition to that it will also add a references inside \$posts for each post item.
+2.  ***users[posts.user_id] as poster*** - this will create a join on `posts` and `users` table using `user_id`. As a result you will have:
+   1. A `$poster` object (instance of User model) in your controller. 
+   2. A references to the matching `poster` inside each post of `$posts` object (created above).
    3. If it is getting confusing, think of it like an SQL query:
 ```SELECT * FROM posts as A, users as b where user_id = :user_id and b.user_id = a.user_id```
-   4. But don't worry too much about this. It will become clear with this example.
-  5. Note that there is no [] at the end, which means this time it will only load the first matching record (instead of an array of objects)
+   4. It will become clear with the example below.
+  5. Note that there is no [] at the end, which means that we want to load just our first matching row as object (unlike the $posts array in step 1)
 
 **Backend/Newsfeed class:**
 ```php
