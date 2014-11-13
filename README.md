@@ -10,7 +10,7 @@ It's highly experimental code! Just want to share the concept and code to see **
 
 ###Facebook like newsfeed demo (in two minutes)###
 
-**Database setup:** Contains a user table, posts table and comments table, plus two more tables called PostsLikes and CommentsLikes.
+**Database setup:** Contains a `user` table, `posts` table and `comments` table, plus two more tables called `posts_likes` and `comments_likes`.
 
 **Understanding the new Router syntax:**
 
@@ -43,24 +43,25 @@ The first three arguments are pretty standard:
 **index.php:**
 ```php
 //$r is instance of Router
-//Sample route to match /newsfeed/1, /newsfeed/2, etc (digit => :user_id)
+//Sample matching routes are /newsfeed/1, /newsfeed/2, etc (last digit => :user_id)
 $r->get('/newsfeed/:user_id', 'Backend/Newsfeed@index', true, 'posts[user_id][]', 'users[posts.user_id] as poster')
 ```
 
 Explanation of the *last two parameters*:
    
-1. ***posts[user_id][]*** - this will load all posts with user_id matching *:user_id* in URL (our placeholder)
-   1.  It will then create `$posts` object (instance of Posts model) which is an array of matching rows from our `posts` table.
+1. ***posts[user_id][]*** - find all rows in `posts` table with `user_id` matching `:user_id` in URL (the placeholder). What this will do is:
+   1.  It will then create `$posts` object (instance of Posts model) with an array of matching rows loaded from our `posts` table where user_id=1 (for URL */newsfeed/1*).
    2.  It will pass the `$posts` object to the controller (see below). 
-   3. Example: /newsfeed/1 will fill `$posts` with post items where `user_id=1`.
+   3. It will create an AngularJS object for `$posts` that you can **access as `$scope.posts` in your view**.
+   3. Example: /newsfeed/1 will fill `$posts` with all rows where `user_id=1`.
    4. The **[ ]** at end is to specify we want an array or *all* matching results.
 2.  ***users[posts.user_id] as poster*** - this will create a join on `posts` and `users` table using `user_id`. As a result you will have:
    1. A `$poster` object (instance of User model) in your controller. 
-   2. A references to the matching `poster` inside each post of `$posts` object (created above).
+   2. A references to the matching `poster` inside each row of `$posts` object.
    3. If it is getting confusing, think of it like an SQL query:
 ```SELECT * FROM posts as A, users as b where user_id = :user_id and b.user_id = a.user_id```
-   4. It will become clear with the example below.
-  5. Note that there is no [] at the end, which means that we want to load just our first matching row as object (unlike the $posts array in step 1)
+   4. It will also create an AngularJS object for you that you can access as `$scope.posts[0].poster`, `$scope.posts[1].poster.firstName`, etc in your view.
+  5. Note that there is no [] at the end this time. It means that we want to load just our **first matching row** (unlike $posts which is an array of all matching records)
 
 **Backend/Newsfeed class:**
 ```php
@@ -114,17 +115,17 @@ As you can see above, the View class automatically converted our $posts Model in
 
 `$scope.posts` is an array but it has a few functions of its own like `.create()`, `loadNextPage()`, etc. 
 
-Each item in `$scope.posts` array (say, `PostItem`) is an object with functions like `set()`, `save()`, etc.
+Each item in `$scope.posts` array (say, `PostItem`) is an object of `Record` type with functions like `set()`, `save()`, etc.
 
 **But here is the most interesting part!**
 
 Do you remember about our `users[posts.user_id] as poster` in the router? 
 
-What this means to you is that we created a `$posts` array. Then we created `$poster` object (instance of Users Model) and loaded results from the users table by matching the `user_id`.
+What this means to you is that we created a `$posts` array. Then we created `$poster` object (instance of Users Model) and loaded results from the users table by matching on the `user_id`.
 
 But what this also means to you is that each item inside `$scope.posts` now also contains a reference to it's `poster` object as well.
 
-So `{{$posts[0].poster.first}}` will print the first name of the poster in AngularJS.
+So `{{$posts[0].poster.firstName}}` will print the first name of the poster in AngularJS.
 
 >Too hard to comprehend? I hope not! :)
 
@@ -149,13 +150,49 @@ Now let's pull our parameters apart:
    1. We load only the first two records, hence the [2] instead of [] at the end. 
    2. We can load more records inside AngularJS on the `$scope.posts` by calling `$scope.posts.loadNextPage()` as you will see in the example below.
    3. You can also use posts[user_id][1,2] which will load the second page (skip the first two records)
-2.  `users[posts.user_id] as poster` Same as last time. We want to load the poster of each post by creating a join on posts.user_id on the users table. Remember that since we don't have a trailing [] at the end, this is an object not an array.
+2.  `users[posts.user_id] as poster` Same as last time. We want to load the poster of each post by creating a join on posts.user_id on the users table. Remember that since we don't have a trailing [] at the end, it tells MinutePHP we want the first matching object (not the whole array of matching results).
 3. `postsLikes[posts.post_id][] as plikes` Create a `$postsLikes` object by creating a join on `posts.post_id` on the post_likes table. This time we do have a trailing [] at the end, so what this means is that we will get an array instead of single object.
-4. `users[plikes.user_id] as pliker` We want to know who liked the posts. So we create a $pliker object creating a join on `plikes.user_id` (i.e. `postsLikes.user_id`) on the users table. This is not an array but a single object.
-5. `comments[posts.post_id][] order by comment_id desc` Since each posts can have comments inside it, we create a $comments object joining `post_id` on `posts` and `comments`. This will also return an array. 
-   6. Since we wish to load the comments in the reverse order in which they were posted, we add an order by clause similar to SQL.
-6. `users[comments.user_id] as commenter` We surely want to know who made the comment, so we create a $commenter object joining the `user_id` on the `comments` and `users` table.
+4. `users[plikes.user_id] as pliker` We want to know who liked the posts. So we create a $pliker object creating a join on `users` and `postsLikes` table using user_id. Again, this is just a single object.
+5. `comments[posts.post_id][] order by comment_id desc` Since each posts can have comments inside it, we create a `$comments` object joining `posts` and `comments` using `post_id`. This will return an array because of the trailing []. 
+   6. Since we wish to load the comments in the reverse order in which they were posted, we add an order by clause: `order by comment_id desc` (similar to SQL).
+6. `users[comments.user_id] as commenter` We surely want to know who made the comment, so we create a new `$commenter` object joining the `user_id` on the `comments` and `users` table.
 7. `commentsLikes[comments.comment_id][] as clikes` This is pretty much same as postLikes, except we're using it for comments.
 
+When we render our view all these objects will be converted to AngularJS objects. So broadly speaking our code will look something like this:
 
+```html
+<div ng-repeat="post in posts">
+	{{post.title}} by {{post.poster.first}}
+
+	<div ng-repeat="comment in post.comments">
+		{{comment.title}} by {{comment.commenter.first}}		
+	</div>
+
+	<input type="text" ng-model="userinput" />
+	<button ng-click="createItem(post.comments)">Add comment</button>
+</div>
+
+<input type="text" ng-model="userinput" />
+<button ng-click="createItem(posts)">Add post</button>
+
+<button ng-click="posts.loadNextPage();" ng-show="posts.$more">more</button>
+```
+
+The above will render two posts, print their titles alongwith the name of the user who made the post.
+
+Inside each post will be all the comments with the name of the user who made it!
+
+Similar to example #1, if you want the user to create a new post or comment, all you have to do is this:
+
+```html
+<script>
+function extend($scope) {
+	$scope.createItem = function(item) {
+	    //will create a new post or comment
+		item.create().set('title', $scope.userinput).save();
+	}
+}
+</script>
+
+```
 
