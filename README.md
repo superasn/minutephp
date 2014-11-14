@@ -11,11 +11,11 @@ It's highly experimental code! I just want to share the concept (and code) to se
 
 ###**Demo: Facebook like newsfeed** 
 
-**Demo:** Create a facebook like newsfeed in 2 minutes using almost no code.
+**Demo:** Create a facebook like newsfeed in 2 minutes (using minimum code).
 
-**Database setup:** Our MySQL database contains a `user` (`PK: user_id`) table, `posts` (`PK: post_id`) key table and `comments` (`PK: comment_id`) table, plus two more tables called `posts_likes` and `comments_likes`. 
+**Database setup:** Our MySQL database contains a `user` table (`PK: user_id`), `posts` table (`PK: post_id`) and `comments` table (`PK: comment_id`). 
 
-The `posts` table references the `users` table (since the users make posts) and `comments` table references both `users` and `posts` table (comments are made on posts by users).
+The `posts` table references the `users` table (since the users make posts) and `comments` table references both `users` and `posts` table (because comments are made on posts by users).
 
 **Understanding the _new_ Router syntax:**
 
@@ -141,7 +141,11 @@ So `{{$posts[0].poster.firstName}}` will print the first name of the poster in A
 
 >Too hard to comprehend? I hope not! :) But I'll give you another example..
 
-Ok, let's take a look at this route.. you'll probably go *whaaaaa*, but the concept behind it is simple and once you get it, things will become very clear:
+Also let's add two more tables called `posts_likes` and `comments_likes`.  
+	- `posts_likes` contains two fields called `user_id` and `post_id` to keep track of which `user` liked which `post`. 
+	- `comments_likes` similary contains two fields called `user_id` and `comment_id` to keep track of which `user` liked which `comment`. 
+
+Ok, now take a look at this route.. you'll probably go *whaaaaa*, but the concept behind it is simple and once you get it, things will begin to look very easy! :)
 
 ```php
 $r->get('/newsfeed/:user_id', 'Backend/Newsfeed@index', false,
