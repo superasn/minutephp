@@ -9,7 +9,9 @@
 ###Project status###
 It's highly experimental code! I just want to share the concept (and code) to see **if anyone interested in collaborating** :)
 
-###**Demo: Facebook like newsfeed** (in two minutes ~ 20 lines of code)
+###**Demo: Facebook like newsfeed** 
+
+**Demo:** Create a facebook like newsfeed in 2 minutes using almost no code.
 
 **Database setup:** Our MySQL database contains a `user` (`PK: user_id`) table, `posts` (`PK: post_id`) key table and `comments` (`PK: comment_id`) table, plus two more tables called `posts_likes` and `comments_likes`. 
 
