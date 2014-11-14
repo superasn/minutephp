@@ -98,8 +98,8 @@ public function index($posts, $poster) {
 	<div ng-repeat="post in posts">
 		<h3>{{post.title}}</h3> by post.poster.first
 		
-		<ng-form><input type="text" ng-model="mytitle" value="changed title" />
-		   <button ng-click="updatePost(post);">Update post</button><ng-form>
+		<ng-form><input type="text" ng-model="post.title" placeholder="title" />
+		   <button ng-disabled="post.$dirty" ng-click="updatePost(post);">Update post</button><ng-form>
 	</div>
 </div>
 
@@ -111,9 +111,8 @@ function extend($scope) {
 		console.log("post: ", post); //will have post_id, etc
 	}
 		
-	$scope.updatePost = function(item) {
-		//will change the post's title to user input
-		item.set('title', $scope.mytitle).save();
+	$scope.updatePost = function(post) {
+		post.save();
 	}
 }
 </script>
@@ -309,3 +308,32 @@ $> php Minute/CLI/minute.php --create-models --db=fb --host=localhost --user=roo
 $> php Minute/CLI/minute.php --create-controllers --file=index.php
 ```
 
+###So what's next?###
+
+1. **Controller chaining:** You may ask.. what's that? It's basically a way to create an array of controllers and chain them together like this:
+
+	**File: `index.php`**
+	
+	```php
+	$r->get('/billing/paypal', ['Plugins/Paypal@IPN as ipn', 'Billing@process'], false, ...)
+	$r->get('/billing/2co',    ['Plugins/TwoCO@IPN as ipn', 'Billing@process'], false, ...)
+	```
+	
+	There are a bunch of task that you have to do in every site, so I am thinking that we can write a few plugins, and then chain these to our controllers using an array. So that when the `process` function is invoked in the `Billing` class it is automatically injected with a `$ipn` object that has already processed the payment and contains a simple `$payment` object like `{pass: true, amount:33.33}`
+
+2. **HybridAuth integration:** I think hybriadauth is the best solution for implementing login and signup. So I will probably use that and create an OAuth provider inside MinutePHP to provide the option to signup by email.
+
+3.  **An `$scope.posts.on('item_added', ...)` handler:** Right now the only way to check for changes is via the `.$dirty` flag on Records [it automatically resets after `.save()`]. 
+
+	But instead I want to add a Global `.on` handler that fires events even when the `$scope.posts` is changed by *anybody*. This can be easily implement using Websockets. 
+
+	So take for example, our facebook feed demo, if there was a to hook `$scope.posts.on('item_added', ..)` we can easily create a notification for the user that a new post was created, or somebody liked their post, comment, etc.
+
+
+###What else?###
+
+It's just something I'm doing in my spare time. It is by no means perfect or production ready but the sample code works great so far it is working exactly as I expected. 
+
+Sorry for not taking a TDD approach. I was having way too much fun with the Router and Models that I kinda skipped that :P But the PHPUnit tests are coming very soon :) Of course some help with that would be greatly appreciated always.
+
+By the way, I've tried the facebook feed demo with about 100,000 records and the system seems to run like a breeze. The total lines of code is about 50 which consists of mostly HTML (or AngularJS).
