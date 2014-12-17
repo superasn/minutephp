@@ -55,7 +55,7 @@
 	
 ##Documention##
 
-1. Single page [HTML documentation](http://ddd.com)
+1. Single page [HTML documentation](doc.html)
 
 ##RoadMap##
 
